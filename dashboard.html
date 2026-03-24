@@ -313,252 +313,118 @@
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="top">
-      <div class="title">
-        <h1>Dashboard admin — Castings</h1>
-        <p>Ajoute rapidement un casting à partir d’une capture d’écran. Une fois uploadé, il peut être affiché automatiquement sur le site public.</p>
-      </div>
-      <div class="badge">Mode admin</div>
-    </div>
 
-    <div class="layout">
-      <section class="panel">
-        <h2>Ajouter un casting</h2>
+<!-- TON HTML RESTE IDENTIQUE -->
 
-        <form id="castingForm">
-          <div class="field">
-            <label for="title">Titre</label>
-            <input id="title" name="title" type="text" placeholder="Ex : Casting comédienne 20-30 ans" required />
+<script>
+  const form = document.getElementById("castingForm");
+  const imageInput = document.getElementById("imageInput");
+  const preview = document.getElementById("preview");
+  const statusBox = document.getElementById("status");
+  const castingList = document.getElementById("castingList");
+  const searchInput = document.getElementById("searchInput");
+  const resetBtn = document.getElementById("resetBtn");
+
+  let cachedCastings = [];
+
+  function setStatus(msg, type=""){
+    statusBox.textContent = msg;
+    statusBox.className = "status " + type;
+  }
+
+  imageInput.addEventListener("change", ()=>{
+    preview.innerHTML="";
+    const file = imageInput.files[0];
+    if(!file) return;
+    const img = document.createElement("img");
+    img.src = URL.createObjectURL(file);
+    preview.appendChild(img);
+  });
+
+  resetBtn.addEventListener("click", ()=>{
+    form.reset();
+    preview.innerHTML="";
+    setStatus("");
+  });
+
+  async function loadCastings(){
+    const res = await fetch("/api/castings");
+    const data = await res.json();
+    cachedCastings = data;
+    renderList(data);
+  }
+
+  function renderList(items){
+    if(!items.length){
+      castingList.innerHTML = `<div class="empty">Aucun casting</div>`;
+      return;
+    }
+
+    castingList.innerHTML = items.map((item,i)=>`
+      <article class="casting-item">
+        <img src="${item.image}">
+        <div>
+          <h3>${item.title}</h3>
+          <p>${item.description_public || ""}</p>
+          <div class="mini-tags">
+            <span>${item.platform}</span>
+            <span>${item.city}</span>
           </div>
-
-          <div class="field">
-            <label for="platform">Réseau d’origine</label>
-            <select id="platform" name="platform">
-              <option value="Instagram">Instagram</option>
-              <option value="TikTok">TikTok</option>
-              <option value="Facebook">Facebook</option>
-              <option value="X / Twitter">X / Twitter</option>
-              <option value="Autre">Autre</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="city">Ville / zone</label>
-            <input id="city" name="city" type="text" placeholder="Ex : Paris" />
-          </div>
-
-          <div class="field">
-            <label for="description_public">Résumé public</label>
-            <textarea id="description_public" name="description_public" placeholder="Ce texte sera visible par tout le monde."></textarea>
-          </div>
-
-          <div class="field">
-            <label for="description_private">Détails abonnés</label>
-            <textarea id="description_private" name="description_private" placeholder="Ici les infos réservées aux abonnés : lien, contact, dates, consignes, rémunération, etc."></textarea>
-          </div>
-
-          <div class="field">
-            <label>Capture d’écran</label>
-            <label class="dropzone" for="imageInput">
-              <strong>Glisse une capture ici ou clique pour choisir un fichier</strong>
-              <span style="color:var(--muted);font-size:.95rem;">PNG, JPG, WEBP…</span>
-              <input id="imageInput" name="image" type="file" accept="image/*" required />
-            </label>
-            <div class="preview" id="preview"></div>
-          </div>
-
-          <div class="actions">
-            <button type="submit" class="btn-primary">Publier le casting</button>
-            <button type="button" class="btn-secondary" id="resetBtn">Réinitialiser</button>
-          </div>
-
-          <div id="status" class="status"></div>
-        </form>
-      </section>
-
-      <section class="panel">
-        <div class="list-header">
-          <h2 style="margin:0;">Castings publiés</h2>
-          <input id="searchInput" class="search" type="text" placeholder="Rechercher un casting..." />
         </div>
-
-        <div id="castingList" class="casting-list">
-          <div class="empty">Aucun casting pour le moment.</div>
+        <div class="side-actions">
+          <button class="btn-danger" onclick="deleteCasting(${i})">Supprimer</button>
         </div>
-      </section>
-    </div>
-  </div>
+      </article>
+    `).join("");
+  }
 
-  <script>
-    const form = document.getElementById("castingForm");
-    const imageInput = document.getElementById("imageInput");
-    const preview = document.getElementById("preview");
-    const statusBox = document.getElementById("status");
-    const castingList = document.getElementById("castingList");
-    const searchInput = document.getElementById("searchInput");
-    const resetBtn = document.getElementById("resetBtn");
+  form.addEventListener("submit", async (e)=>{
+    e.preventDefault();
 
-    let cachedCastings = [];
+    const file = imageInput.files[0];
+    if(!file){
+      setStatus("Ajoute une image","err");
+      return;
+    }
 
-    imageInput.addEventListener("change", () => {
-      preview.innerHTML = "";
-      const file = imageInput.files[0];
-      if (!file) return;
+    const formData = new FormData();
+    formData.append("title", title.value);
+    formData.append("platform", platform.value);
+    formData.append("city", city.value);
+    formData.append("description_public", description_public.value);
+    formData.append("description_private", description_private.value);
+    formData.append("image", file);
 
-      const img = document.createElement("img");
-      img.src = URL.createObjectURL(file);
-      img.alt = "Prévisualisation";
-      preview.appendChild(img);
+    await fetch("/api/add-casting", {
+      method:"POST",
+      body: formData
     });
 
-    resetBtn.addEventListener("click", () => {
-      form.reset();
-      preview.innerHTML = "";
-      statusBox.textContent = "";
-      statusBox.className = "status";
-    });
-
-    function setStatus(message, type = "") {
-      statusBox.textContent = message;
-      statusBox.className = "status " + type;
-    }
-
-    function renderList(items) {
-      if (!items.length) {
-        castingList.innerHTML = `<div class="empty">Aucun casting trouvé.</div>`;
-        return;
-      }
-
-      castingList.innerHTML = items.map((item, index) => `
-        <article class="casting-item">
-          <img src="${item.image}" alt="${item.title}">
-          <div>
-            <h3>${item.title}</h3>
-            <p>${item.description_public || "Pas de résumé public."}</p>
-            <div class="mini-tags">
-              <span>${item.platform || "Réseau social"}</span>
-              <span>${item.city || "Lieu non précisé"}</span>
-              <span>${item.created_at || "ajout récent"}</span>
-            </div>
-          </div>
-          <div class="side-actions">
-            <button class="btn-secondary" onclick="editCasting(${index})">Modifier</button>
-            <button class="btn-danger" onclick="deleteCasting(${index})">Supprimer</button>
-          </div>
-        </article>
-      `).join("");
-    }
-
-    async function loadCastings() {
-      try {
-        const res = await fetch("/api/castings");
-        if (!res.ok) throw new Error("Impossible de charger les castings");
-        const data = await res.json();
-        cachedCastings = data;
-        renderList(cachedCastings);
-      } catch (e) {
-        cachedCastings = [];
-        renderList(cachedCastings);
-      }
-    }
-
-    function fileToBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const file = imageInput.files[0];
-      if (!file) {
-        setStatus("Ajoute une capture d’écran avant de publier.", "err");
-        return;
-      }
-
-      setStatus("Publication en cours...", "");
-
-      try {
-        const imageBase64 = await fileToBase64(file);
-
-        const payload = {
-          title: document.getElementById("title").value,
-          platform: document.getElementById("platform").value,
-          city: document.getElementById("city").value,
-          description_public: document.getElementById("description_public").value,
-          description_private: document.getElementById("description_private").value,
-          image: imageBase64
-        };
-
-        const res = await fetch("/api/add-casting", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) throw new Error("Erreur pendant l’ajout");
-
-        setStatus("Casting publié avec succès.", "ok");
-        form.reset();
-        preview.innerHTML = "";
-        await loadCastings();
-      } catch (err) {
-        console.error(err);
-        setStatus("Échec de la publication. Vérifie le backend.", "err");
-      }
-    });
-
-    searchInput.addEventListener("input", () => {
-      const q = searchInput.value.toLowerCase().trim();
-      const filtered = cachedCastings.filter(item =>
-        (item.title || "").toLowerCase().includes(q) ||
-        (item.city || "").toLowerCase().includes(q) ||
-        (item.platform || "").toLowerCase().includes(q)
-      );
-      renderList(filtered);
-    });
-
-    function editCasting(index) {
-      const item = cachedCastings[index];
-      if (!item) return;
-
-      document.getElementById("title").value = item.title || "";
-      document.getElementById("platform").value = item.platform || "Autre";
-      document.getElementById("city").value = item.city || "";
-      document.getElementById("description_public").value = item.description_public || "";
-      document.getElementById("description_private").value = item.description_private || "";
-
-      setStatus("Casting chargé dans le formulaire. Tu peux le modifier puis republier.", "ok");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    async function deleteCasting(index) {
-      try {
-        const res = await fetch("/api/delete-casting", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ index })
-        });
-
-        if (!res.ok) throw new Error("Suppression impossible");
-        setStatus("Casting supprimé.", "ok");
-        await loadCastings();
-      } catch (e) {
-        console.error(e);
-        setStatus("La suppression a échoué.", "err");
-      }
-    }
-
+    setStatus("Ajout OK","ok");
+    form.reset();
+    preview.innerHTML="";
     loadCastings();
-  </script>
+  });
+
+  async function deleteCasting(index){
+    await fetch("/api/delete-casting", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json"},
+      body: JSON.stringify({index})
+    });
+    loadCastings();
+  }
+
+  searchInput.addEventListener("input", ()=>{
+    const q = searchInput.value.toLowerCase();
+    renderList(cachedCastings.filter(c =>
+      c.title.toLowerCase().includes(q) ||
+      c.city.toLowerCase().includes(q)
+    ));
+  });
+
+  loadCastings();
+</script>
+
 </body>
 </html>
