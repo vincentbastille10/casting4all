@@ -37,6 +37,7 @@ init_db()
 def home():
     return "API RUNNING"
 
+# GET CASTINGS
 @app.route("/api/castings", methods=["GET"])
 def get_castings():
     conn = sqlite3.connect(DB)
@@ -61,7 +62,8 @@ def get_castings():
 
     return jsonify(castings)
 
-@app.route("/api/castings", methods=["POST"])
+# ADD CASTING (🔥 IMPORTANT : accepte FORM-DATA)
+@app.route("/api/add-casting", methods=["POST"])
 def add_casting():
     file = request.files.get("image")
 
@@ -95,50 +97,33 @@ def add_casting():
 
     return jsonify({"success": True})
 
+# DELETE CASTING
+@app.route("/api/delete-casting", methods=["POST"])
+def delete_casting():
+    data = request.get_json()
+    index = data.get("index")
+
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute("SELECT id FROM castings ORDER BY id DESC")
+    rows = c.fetchall()
+
+    if index >= len(rows):
+        return jsonify({"error": "Invalid index"}), 400
+
+    casting_id = rows[index][0]
+
+    c.execute("DELETE FROM castings WHERE id = ?", (casting_id,))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"success": True})
+
+# SERVE IMAGE
 @app.route("/api/uploads/<filename>")
 def uploaded_file(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
 
-
-from http.server import BaseHTTPRequestHandler
-import json
-import base64
-import requests
-import os
-
-GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
-REPO = "vincentbastille10/casting4all"
-FILE_PATH = "api/castings.json"
-
-class handler(BaseHTTPRequestHandler):
-    def do_POST(self):
-        if self.path == "/api/add-casting":
-            length = int(self.headers['Content-Length'])
-            body = self.rfile.read(length)
-            data = json.loads(body)
-
-            # 1. GET FILE
-            url = f"https://api.github.com/repos/{REPO}/contents/{FILE_PATH}"
-            headers = {"Authorization": f"token {GITHUB_TOKEN}"}
-            res = requests.get(url, headers=headers)
-            file_data = res.json()
-
-            content = json.loads(base64.b64decode(file_data["content"]))
-
-            # 2. ADD
-            content.insert(0, data)
-
-            updated = base64.b64encode(
-                json.dumps(content, indent=2).encode()
-            ).decode()
-
-            # 3. PUSH
-            requests.put(url, headers=headers, json={
-                "message": "add casting",
-                "content": updated,
-                "sha": file_data["sha"]
-            })
-
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(b"OK")
+# RUN LOCAL
+if __name__ == "__main__":
+    app.run(debug=True)
