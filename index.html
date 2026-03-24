@@ -824,7 +824,7 @@
 
     async function loadCastings() {
       try {
-        const res = await fetch("/api/castings");
+        const res = await fetch("/api/castings.json");
         if (!res.ok) throw new Error("API non disponible");
         const data = await res.json();
         renderCastings(data);
