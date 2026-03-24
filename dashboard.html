@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Admin — Ajout de castings</title>
+  <style>
+    :root{
+      --bg:#0f1117;
+      --panel:#171c25;
+      --panel2:#1d2430;
+      --line:#2f3849;
+      --text:#f5f7fb;
+      --muted:#a8b1c3;
+      --accent:#5b8cff;
+      --accent2:#13c296;
+      --danger:#ff5c7c;
+      --radius:20px;
+      --shadow:0 18px 50px rgba(0,0,0,.35);
+      --max:1180px;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(91,140,255,.15), transparent 26%),
+        radial-gradient(circle at top right, rgba(19,194,150,.12), transparent 24%),
+        var(--bg);
+      color:var(--text);
+    }
+
+    .container{
+      width:min(100% - 32px, var(--max));
+      margin:auto;
+      padding:28px 0 48px;
+    }
+
+    .top{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:20px;
+      margin-bottom:24px;
+    }
+
+    .title h1{
+      margin:0 0 8px;
+      font-size:clamp(1.8rem, 3vw, 2.8rem);
+      letter-spacing:-1px;
+    }
+
+    .title p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.5;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:10px 14px;
+      border-radius:999px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.08);
+      font-weight:700;
+    }
+
+    .layout{
+      display:grid;
+      grid-template-columns:420px 1fr;
+      gap:22px;
+      align-items:start;
+    }
+
+    .panel{
+      background:linear-gradient(180deg,var(--panel),var(--panel2));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:24px;
+      padding:22px;
+      box-shadow:var(--shadow);
+    }
+
+    .panel h2{
+      margin:0 0 16px;
+      font-size:1.25rem;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin-bottom:14px;
+    }
+
+    label{
+      font-weight:700;
+      font-size:.95rem;
+    }
+
+    input, textarea, select{
+      width:100%;
+      background:#11161f;
+      color:var(--text);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px 14px;
+      font:inherit;
+      outline:none;
+    }
+
+    textarea{
+      min-height:110px;
+      resize:vertical;
+    }
+
+    input:focus, textarea:focus, select:focus{
+      border-color:var(--accent);
+      box-shadow:0 0 0 3px rgba(91,140,255,.15);
+    }
+
+    .dropzone{
+      border:2px dashed rgba(255,255,255,.16);
+      border-radius:18px;
+      padding:22px;
+      text-align:center;
+      background:rgba(255,255,255,.03);
+      cursor:pointer;
+      transition:.2s ease;
+    }
+
+    .dropzone:hover{
+      border-color:var(--accent);
+      background:rgba(91,140,255,.06);
+    }
+
+    .dropzone input{
+      display:none;
+    }
+
+    .dropzone strong{
+      display:block;
+      margin-bottom:6px;
+      font-size:1rem;
+    }
+
+    .preview{
+      margin-top:14px;
+      display:grid;
+      gap:10px;
+    }
+
+    .preview img{
+      width:100%;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.08);
+      object-fit:cover;
+      max-height:240px;
+      background:#11161f;
+    }
+
+    .actions{
+      display:flex;
+      gap:12px;
+      margin-top:18px;
+      flex-wrap:wrap;
+    }
+
+    button{
+      border:none;
+      cursor:pointer;
+      border-radius:999px;
+      padding:14px 18px;
+      font-weight:800;
+      font-size:.96rem;
+      transition:.2s ease;
+    }
+
+    button:hover{transform:translateY(-1px)}
+
+    .btn-primary{
+      background:linear-gradient(135deg,var(--accent),#7f69ff);
+      color:white;
+    }
+
+    .btn-secondary{
+      background:rgba(255,255,255,.06);
+      color:white;
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .btn-danger{
+      background:linear-gradient(135deg,var(--danger),#ff7b54);
+      color:white;
+    }
+
+    .status{
+      margin-top:14px;
+      min-height:24px;
+      font-weight:700;
+    }
+
+    .status.ok{color:var(--accent2)}
+    .status.err{color:#ff8fa3}
+
+    .list-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:16px;
+    }
+
+    .search{
+      width:280px;
+      max-width:100%;
+    }
+
+    .casting-list{
+      display:grid;
+      gap:14px;
+    }
+
+    .casting-item{
+      display:grid;
+      grid-template-columns:150px 1fr auto;
+      gap:14px;
+      align-items:center;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:18px;
+      padding:14px;
+    }
+
+    .casting-item img{
+      width:150px;
+      height:98px;
+      object-fit:cover;
+      border-radius:14px;
+      background:#11161f;
+    }
+
+    .casting-item h3{
+      margin:0 0 6px;
+      font-size:1.05rem;
+    }
+
+    .casting-item p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.45;
+      font-size:.95rem;
+    }
+
+    .mini-tags{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:8px;
+    }
+
+    .mini-tags span{
+      font-size:.78rem;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.04);
+      color:#d7dff0;
+    }
+
+    .side-actions{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .empty{
+      color:var(--muted);
+      padding:20px;
+      text-align:center;
+      border:1px dashed rgba(255,255,255,.12);
+      border-radius:18px;
+    }
+
+    @media (max-width: 980px){
+      .layout{
+        grid-template-columns:1fr;
+      }
+    }
+
+    @media (max-width: 720px){
+      .top{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+
+      .casting-item{
+        grid-template-columns:1fr;
+      }
+
+      .casting-item img{
+        width:100%;
+        height:auto;
+        aspect-ratio:16/10;
+      }
+
+      .side-actions{
+        flex-direction:row;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top">
+      <div class="title">
+        <h1>Dashboard admin — Castings</h1>
+        <p>Ajoute rapidement un casting à partir d’une capture d’écran. Une fois uploadé, il peut être affiché automatiquement sur le site public.</p>
+      </div>
+      <div class="badge">Mode admin</div>
+    </div>
+
+    <div class="layout">
+      <section class="panel">
+        <h2>Ajouter un casting</h2>
+
+        <form id="castingForm">
+          <div class="field">
+            <label for="title">Titre</label>
+            <input id="title" name="title" type="text" placeholder="Ex : Casting comédienne 20-30 ans" required />
+          </div>
+
+          <div class="field">
+            <label for="platform">Réseau d’origine</label>
+            <select id="platform" name="platform">
+              <option value="Instagram">Instagram</option>
+              <option value="TikTok">TikTok</option>
+              <option value="Facebook">Facebook</option>
+              <option value="X / Twitter">X / Twitter</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="city">Ville / zone</label>
+            <input id="city" name="city" type="text" placeholder="Ex : Paris" />
+          </div>
+
+          <div class="field">
+            <label for="description_public">Résumé public</label>
+            <textarea id="description_public" name="description_public" placeholder="Ce texte sera visible par tout le monde."></textarea>
+          </div>
+
+          <div class="field">
+            <label for="description_private">Détails abonnés</label>
+            <textarea id="description_private" name="description_private" placeholder="Ici les infos réservées aux abonnés : lien, contact, dates, consignes, rémunération, etc."></textarea>
+          </div>
+
+          <div class="field">
+            <label>Capture d’écran</label>
+            <label class="dropzone" for="imageInput">
+              <strong>Glisse une capture ici ou clique pour choisir un fichier</strong>
+              <span style="color:var(--muted);font-size:.95rem;">PNG, JPG, WEBP…</span>
+              <input id="imageInput" name="image" type="file" accept="image/*" required />
+            </label>
+            <div class="preview" id="preview"></div>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="btn-primary">Publier le casting</button>
+            <button type="button" class="btn-secondary" id="resetBtn">Réinitialiser</button>
+          </div>
+
+          <div id="status" class="status"></div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="list-header">
+          <h2 style="margin:0;">Castings publiés</h2>
+          <input id="searchInput" class="search" type="text" placeholder="Rechercher un casting..." />
+        </div>
+
+        <div id="castingList" class="casting-list">
+          <div class="empty">Aucun casting pour le moment.</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById("castingForm");
+    const imageInput = document.getElementById("imageInput");
+    const preview = document.getElementById("preview");
+    const statusBox = document.getElementById("status");
+    const castingList = document.getElementById("castingList");
+    const searchInput = document.getElementById("searchInput");
+    const resetBtn = document.getElementById("resetBtn");
+
+    let cachedCastings = [];
+
+    imageInput.addEventListener("change", () => {
+      preview.innerHTML = "";
+      const file = imageInput.files[0];
+      if (!file) return;
+
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(file);
+      img.alt = "Prévisualisation";
+      preview.appendChild(img);
+    });
+
+    resetBtn.addEventListener("click", () => {
+      form.reset();
+      preview.innerHTML = "";
+      statusBox.textContent = "";
+      statusBox.className = "status";
+    });
+
+    function setStatus(message, type = "") {
+      statusBox.textContent = message;
+      statusBox.className = "status " + type;
+    }
+
+    function renderList(items) {
+      if (!items.length) {
+        castingList.innerHTML = `<div class="empty">Aucun casting trouvé.</div>`;
+        return;
+      }
+
+      castingList.innerHTML = items.map((item, index) => `
+        <article class="casting-item">
+          <img src="${item.image}" alt="${item.title}">
+          <div>
+            <h3>${item.title}</h3>
+            <p>${item.description_public || "Pas de résumé public."}</p>
+            <div class="mini-tags">
+              <span>${item.platform || "Réseau social"}</span>
+              <span>${item.city || "Lieu non précisé"}</span>
+              <span>${item.created_at || "ajout récent"}</span>
+            </div>
+          </div>
+          <div class="side-actions">
+            <button class="btn-secondary" onclick="editCasting(${index})">Modifier</button>
+            <button class="btn-danger" onclick="deleteCasting(${index})">Supprimer</button>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    async function loadCastings() {
+      try {
+        const res = await fetch("/api/castings");
+        if (!res.ok) throw new Error("Impossible de charger les castings");
+        const data = await res.json();
+        cachedCastings = data;
+        renderList(cachedCastings);
+      } catch (e) {
+        cachedCastings = [];
+        renderList(cachedCastings);
+      }
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const file = imageInput.files[0];
+      if (!file) {
+        setStatus("Ajoute une capture d’écran avant de publier.", "err");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("title", document.getElementById("title").value);
+      formData.append("platform", document.getElementById("platform").value);
+      formData.append("city", document.getElementById("city").value);
+      formData.append("description_public", document.getElementById("description_public").value);
+      formData.append("description_private", document.getElementById("description_private").value);
+      formData.append("image", file);
+
+      setStatus("Publication en cours...", "");
+
+      try {
+        const res = await fetch("/api/castings", {
+          method: "POST",
+          body: formData
+        });
+
+        if (!res.ok) throw new Error("Erreur pendant l’upload");
+
+        setStatus("Casting publié avec succès.", "ok");
+        form.reset();
+        preview.innerHTML = "";
+        await loadCastings();
+      } catch (err) {
+        setStatus("Échec de la publication. Vérifie le backend.", "err");
+      }
+    });
+
+    searchInput.addEventListener("input", () => {
+      const q = searchInput.value.toLowerCase().trim();
+      const filtered = cachedCastings.filter(item =>
+        (item.title || "").toLowerCase().includes(q) ||
+        (item.city || "").toLowerCase().includes(q) ||
+        (item.platform || "").toLowerCase().includes(q)
+      );
+      renderList(filtered);
+    });
+
+    function editCasting(index) {
+      const item = cachedCastings[index];
+      if (!item) return;
+
+      document.getElementById("title").value = item.title || "";
+      document.getElementById("platform").value = item.platform || "Autre";
+      document.getElementById("city").value = item.city || "";
+      document.getElementById("description_public").value = item.description_public || "";
+      document.getElementById("description_private").value = item.description_private || "";
+
+      setStatus("Casting chargé dans le formulaire. Tu peux le modifier puis republier.", "ok");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    async function deleteCasting(index) {
+      const item = cachedCastings[index];
+      if (!item || !item.id) {
+        setStatus("Impossible de supprimer cet élément sans identifiant backend.", "err");
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/castings/${item.id}`, {
+          method: "DELETE"
+        });
+
+        if (!res.ok) throw new Error("Suppression impossible");
+        setStatus("Casting supprimé.", "ok");
+        await loadCastings();
+      } catch (e) {
+        setStatus("La suppression a échoué.", "err");
+      }
+    }
+
+    loadCastings();
+  </script>
+</body>
+</html>
