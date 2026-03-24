@@ -6,63 +6,6 @@
   <title>Castings Privés — Accède aux opportunités du moment</title>
   <meta name="description" content="Retrouve des castings repérés sur les réseaux. Accès aux détails complets pour 5€/mois." />
   <style>
-  
-
-  /* ton code actuel */
-  body { ... }
-  .btn { ... }
-
-  /* 👇 TU AJOUTES ICI */
-  .hero-casting {
-    position: relative;
-    height: 100vh;
-    background: url('/static/ton-image.png') center/cover no-repeat;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-  }
-
-  .hero-casting .overlay {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0.85));
-    top: 0;
-    left: 0;
-  }
-
-  .hero-content {
-    position: relative;
-    color: white;
-    max-width: 800px;
-    padding: 20px;
-  }
-
-  .hero-content h1 {
-    font-size: 48px;
-    margin-bottom: 20px;
-    font-weight: 700;
-  }
-
-  .hero-content p {
-    font-size: 20px;
-    margin-bottom: 30px;
-    opacity: 0.9;
-  }
-
-  .hero-btn {
-    background: #ffffff;
-    color: #000;
-    padding: 16px 32px;
-    border-radius: 10px;
-    text-decoration: none;
-    font-weight: bold;
-  }
-
-</style>
-
-  
     :root{
       --bg:#0f1117;
       --panel:#171a22;
@@ -92,6 +35,110 @@
 
     a{text-decoration:none;color:inherit}
     img{max-width:100%;display:block}
+
+    /* ===== BANNIÈRE HERO AJOUTÉE ===== */
+    .hero-casting{
+      position:relative;
+      min-height:100vh;
+      background:
+        linear-gradient(to bottom, rgba(8,10,16,.38), rgba(8,10,16,.78)),
+        url('/static/hero.jpg') center/cover no-repeat;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      overflow:hidden;
+    }
+
+    .hero-casting .overlay{
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(circle at center, rgba(255,255,255,.04), transparent 35%),
+        linear-gradient(to bottom, rgba(0,0,0,.25), rgba(0,0,0,.62));
+      pointer-events:none;
+    }
+
+    .hero-content{
+      position:relative;
+      z-index:2;
+      color:white;
+      max-width:920px;
+      padding:32px 20px;
+    }
+
+    .hero-kicker{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 16px;
+      border-radius:999px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      color:#fff;
+      font-size:.94rem;
+      margin-bottom:20px;
+      backdrop-filter:blur(8px);
+    }
+
+    .hero-content h1{
+      margin:0 0 18px;
+      font-size:clamp(2.5rem, 6vw, 5.6rem);
+      line-height:.94;
+      letter-spacing:-2px;
+      text-shadow:0 10px 30px rgba(0,0,0,.28);
+    }
+
+    .hero-content p{
+      margin:0 auto 28px;
+      max-width:760px;
+      font-size:clamp(1rem, 2vw, 1.22rem);
+      line-height:1.6;
+      color:rgba(255,255,255,.92);
+      text-shadow:0 6px 22px rgba(0,0,0,.22);
+    }
+
+    .hero-cta-row{
+      display:flex;
+      justify-content:center;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-bottom:18px;
+    }
+
+    .hero-btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      min-width:190px;
+      padding:16px 28px;
+      border-radius:999px;
+      font-weight:800;
+      transition:.2s ease;
+      border:1px solid transparent;
+    }
+
+    .hero-btn:hover{transform:translateY(-1px)}
+
+    .hero-btn-primary{
+      background:linear-gradient(135deg,var(--accent),#ff7a59);
+      color:white;
+      box-shadow:0 10px 30px rgba(255,77,109,.28);
+    }
+
+    .hero-btn-secondary{
+      background:rgba(255,255,255,.08);
+      color:#fff;
+      border-color:rgba(255,255,255,.16);
+      backdrop-filter:blur(8px);
+    }
+
+    .hero-note{
+      color:rgba(255,255,255,.72);
+      font-size:.95rem;
+    }
+    /* ===== FIN BANNIÈRE HERO AJOUTÉE ===== */
 
     .container{
       width:min(100% - 32px, var(--max));
@@ -499,25 +546,50 @@
         flex-direction:column;
         align-items:stretch;
       }
+
+      .hero-casting{
+        min-height:92vh;
+        background-position:center center;
+      }
+
+      .hero-content{
+        padding:24px 16px;
+      }
+
+      .hero-cta-row{
+        flex-direction:column;
+        align-items:stretch;
+      }
+
+      .hero-btn{
+        width:100%;
+      }
     }
   </style>
 </head>
 <body>
 
-<section class="hero-casting">
-  <div class="overlay"></div>
+  <!-- ===== BLOC 1 AJOUTÉ : HERO BANNIÈRE ===== -->
+  <section class="hero-casting">
+    <div class="overlay"></div>
 
-  <div class="hero-content">
-    <h1>Accède aux castings en cours partout en France</h1>
-    <p>
-      Films, séries, publicités, télé-réalité…<br>
-      Des opportunités mises à jour en continu
-    </p>
-    <a href="#castings" class="hero-btn">Voir les castings</a>
-  </div>
-</section>
+    <div class="hero-content">
+      <div class="hero-kicker">Castings • Films • Séries • Publicités • Télé-réalité</div>
+      <h1>Accède aux castings en cours partout en France</h1>
+      <p>
+        Films, séries, publicités, télé-réalité…<br>
+        Des opportunités mises à jour en continu.
+      </p>
 
+      <div class="hero-cta-row">
+        <a href="#castings" class="hero-btn hero-btn-primary">Voir les castings</a>
+        <a href="/checkout" class="hero-btn hero-btn-secondary">S’abonner 5€/mois</a>
+      </div>
 
+      <div class="hero-note">Accès aux détails complets réservé aux abonnés.</div>
+    </div>
+  </section>
+  <!-- ===== FIN BLOC 1 AJOUTÉ ===== -->
 
   <header class="topbar">
     <div class="container topbar-inner">
@@ -592,6 +664,48 @@
     </div>
   </section>
 
+  <!-- ===== BLOC 2 AJOUTÉ : BANDEAU RASSURANCE ===== -->
+  <section class="section" style="padding-top:0;">
+    <div class="container">
+      <div style="
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        gap:16px;
+      ">
+        <div style="
+          background:rgba(255,255,255,.04);
+          border:1px solid rgba(255,255,255,.08);
+          border-radius:18px;
+          padding:18px;
+        ">
+          <strong style="display:block;margin-bottom:8px;">Repérés sur les réseaux</strong>
+          <span style="color:var(--muted);line-height:1.55;">Les opportunités sont regroupées au même endroit pour éviter de tout rater.</span>
+        </div>
+
+        <div style="
+          background:rgba(255,255,255,.04);
+          border:1px solid rgba(255,255,255,.08);
+          border-radius:18px;
+          padding:18px;
+        ">
+          <strong style="display:block;margin-bottom:8px;">Mise à jour continue</strong>
+          <span style="color:var(--muted);line-height:1.55;">Les nouvelles annonces peuvent être ajoutées au fil de l’eau depuis le dashboard.</span>
+        </div>
+
+        <div style="
+          background:rgba(255,255,255,.04);
+          border:1px solid rgba(255,255,255,.08);
+          border-radius:18px;
+          padding:18px;
+        ">
+          <strong style="display:block;margin-bottom:8px;">Accès simple</strong>
+          <span style="color:var(--muted);line-height:1.55;">Le paiement n’est pas encore branché, mais la structure du site est prête.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- ===== FIN BLOC 2 AJOUTÉ ===== -->
+
   <section class="price-section">
     <div class="container">
       <div class="price-panel">
@@ -657,7 +771,7 @@
         platform: "Instagram",
         city: "Paris",
         description_public: "Recherche profil naturel pour tournage rémunéré.",
-        image: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?q=80&w=1200&auto=format&fit=crop",
+        image: "/static/fallback-casting-1.jpg",
         locked: true
       },
       {
@@ -665,7 +779,7 @@
         platform: "TikTok",
         city: "Lyon",
         description_public: "Clip musical, énergie scénique, disponibilité rapide.",
-        image: "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?q=80&w=1200&auto=format&fit=crop",
+        image: "/static/fallback-casting-2.jpg",
         locked: true
       },
       {
@@ -673,7 +787,7 @@
         platform: "Facebook",
         city: "Marseille",
         description_public: "Recherche plusieurs profils adultes, tournage court.",
-        image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=1200&auto=format&fit=crop",
+        image: "/static/fallback-casting-3.jpg",
         locked: true
       }
     ];
