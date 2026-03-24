@@ -391,159 +391,200 @@
   </div>
 
   <script>
-    const form = document.getElementById("castingForm");
-    const imageInput = document.getElementById("imageInput");
-    const preview = document.getElementById("preview");
-    const statusBox = document.getElementById("status");
-    const castingList = document.getElementById("castingList");
-    const searchInput = document.getElementById("searchInput");
-    const resetBtn = document.getElementById("resetBtn");
+  const GITHUB_TOKEN = "TON_TOKEN_ICI";
+  const REPO = "vincentbastille10/casting4all";
+  const FILE_PATH = "api/castings.json";
 
-    let cachedCastings = [];
+  const form = document.getElementById("castingForm");
+  const imageInput = document.getElementById("imageInput");
+  const preview = document.getElementById("preview");
+  const statusBox = document.getElementById("status");
+  const castingList = document.getElementById("castingList");
+  const searchInput = document.getElementById("searchInput");
+  const resetBtn = document.getElementById("resetBtn");
 
-    imageInput.addEventListener("change", () => {
-      preview.innerHTML = "";
-      const file = imageInput.files[0];
-      if (!file) return;
+  let cachedCastings = [];
 
-      const img = document.createElement("img");
-      img.src = URL.createObjectURL(file);
-      img.alt = "Prévisualisation";
-      preview.appendChild(img);
+  // PREVIEW IMAGE
+  imageInput.addEventListener("change", () => {
+    preview.innerHTML = "";
+    const file = imageInput.files[0];
+    if (!file) return;
+
+    const img = document.createElement("img");
+    img.src = URL.createObjectURL(file);
+    preview.appendChild(img);
+  });
+
+  resetBtn.addEventListener("click", () => {
+    form.reset();
+    preview.innerHTML = "";
+    setStatus("");
+  });
+
+  function setStatus(message, type = "") {
+    statusBox.textContent = message;
+    statusBox.className = "status " + type;
+  }
+
+  // LOAD FROM GITHUB
+  async function loadCastings() {
+    try {
+      const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE_PATH}`);
+      const data = await res.json();
+
+      const decoded = JSON.parse(atob(data.content));
+      cachedCastings = decoded;
+      renderList(cachedCastings);
+
+    } catch (e) {
+      cachedCastings = [];
+      renderList([]);
+    }
+  }
+
+  function renderList(items) {
+    if (!items.length) {
+      castingList.innerHTML = `<div class="empty">Aucun casting</div>`;
+      return;
+    }
+
+    castingList.innerHTML = items.map((item, index) => `
+      <article class="casting-item">
+        <img src="${item.image}">
+        <div>
+          <h3>${item.title}</h3>
+          <p>${item.description_public || ""}</p>
+          <div class="mini-tags">
+            <span>${item.platform}</span>
+            <span>${item.city}</span>
+          </div>
+        </div>
+        <div class="side-actions">
+          <button class="btn-danger" onclick="deleteCasting(${index})">Supprimer</button>
+        </div>
+      </article>
+    `).join("");
+  }
+
+  // UPLOAD IMAGE → BASE64 (simple)
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
     });
+  }
 
-    resetBtn.addEventListener("click", () => {
+  // ADD CASTING
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const file = imageInput.files[0];
+    if (!file) {
+      setStatus("Ajoute une image", "err");
+      return;
+    }
+
+    setStatus("Upload en cours...");
+
+    try {
+      const imageBase64 = await fileToBase64(file);
+
+      const newCasting = {
+        title: document.getElementById("title").value,
+        platform: document.getElementById("platform").value,
+        city: document.getElementById("city").value,
+        description_public: document.getElementById("description_public").value,
+        description_private: document.getElementById("description_private").value,
+        image: imageBase64,
+        created_at: new Date().toISOString()
+      };
+
+      // GET JSON
+      const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE_PATH}`);
+      const data = await res.json();
+
+      const content = JSON.parse(atob(data.content));
+
+      content.unshift(newCasting);
+
+      const updated = btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2))));
+
+      // PUSH
+      await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE_PATH}`, {
+        method: "PUT",
+        headers: {
+          Authorization: "token " + GITHUB_TOKEN,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          message: "add casting",
+          content: updated,
+          sha: data.sha
+        })
+      });
+
+      setStatus("✅ Ajout réussi", "ok");
       form.reset();
       preview.innerHTML = "";
-      statusBox.textContent = "";
-      statusBox.className = "status";
-    });
+      loadCastings();
 
-    function setStatus(message, type = "") {
-      statusBox.textContent = message;
-      statusBox.className = "status " + type;
+    } catch (err) {
+      console.error(err);
+      setStatus("❌ Erreur", "err");
     }
+  });
 
-    function renderList(items) {
-      if (!items.length) {
-        castingList.innerHTML = `<div class="empty">Aucun casting trouvé.</div>`;
-        return;
-      }
+  // DELETE
+  async function deleteCasting(index) {
+    if (!confirm("Supprimer ce casting ?")) return;
 
-      castingList.innerHTML = items.map((item, index) => `
-        <article class="casting-item">
-          <img src="${item.image}" alt="${item.title}">
-          <div>
-            <h3>${item.title}</h3>
-            <p>${item.description_public || "Pas de résumé public."}</p>
-            <div class="mini-tags">
-              <span>${item.platform || "Réseau social"}</span>
-              <span>${item.city || "Lieu non précisé"}</span>
-              <span>${item.created_at || "ajout récent"}</span>
-            </div>
-          </div>
-          <div class="side-actions">
-            <button class="btn-secondary" onclick="editCasting(${index})">Modifier</button>
-            <button class="btn-danger" onclick="deleteCasting(${index})">Supprimer</button>
-          </div>
-        </article>
-      `).join("");
+    try {
+      const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE_PATH}`);
+      const data = await res.json();
+
+      const content = JSON.parse(atob(data.content));
+
+      content.splice(index, 1);
+
+      const updated = btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2))));
+
+      await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE_PATH}`, {
+        method: "PUT",
+        headers: {
+          Authorization: "token " + GITHUB_TOKEN,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          message: "delete casting",
+          content: updated,
+          sha: data.sha
+        })
+      });
+
+      setStatus("Supprimé", "ok");
+      loadCastings();
+
+    } catch (e) {
+      setStatus("Erreur suppression", "err");
     }
+  }
 
-    async function loadCastings() {
-      try {
-        const res = await fetch("/api/castings");
-        if (!res.ok) throw new Error("Impossible de charger les castings");
-        const data = await res.json();
-        cachedCastings = data;
-        renderList(cachedCastings);
-      } catch (e) {
-        cachedCastings = [];
-        renderList(cachedCastings);
-      }
-    }
+  // SEARCH
+  searchInput.addEventListener("input", () => {
+    const q = searchInput.value.toLowerCase();
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
+    const filtered = cachedCastings.filter(item =>
+      item.title.toLowerCase().includes(q) ||
+      item.city.toLowerCase().includes(q)
+    );
 
-      const file = imageInput.files[0];
-      if (!file) {
-        setStatus("Ajoute une capture d’écran avant de publier.", "err");
-        return;
-      }
+    renderList(filtered);
+  });
 
-      const formData = new FormData();
-      formData.append("title", document.getElementById("title").value);
-      formData.append("platform", document.getElementById("platform").value);
-      formData.append("city", document.getElementById("city").value);
-      formData.append("description_public", document.getElementById("description_public").value);
-      formData.append("description_private", document.getElementById("description_private").value);
-      formData.append("image", file);
-
-      setStatus("Publication en cours...", "");
-
-      try {
-        const res = await fetch("/api/castings", {
-          method: "POST",
-          body: formData
-        });
-
-        if (!res.ok) throw new Error("Erreur pendant l’upload");
-
-        setStatus("Casting publié avec succès.", "ok");
-        form.reset();
-        preview.innerHTML = "";
-        await loadCastings();
-      } catch (err) {
-        setStatus("Échec de la publication. Vérifie le backend.", "err");
-      }
-    });
-
-    searchInput.addEventListener("input", () => {
-      const q = searchInput.value.toLowerCase().trim();
-      const filtered = cachedCastings.filter(item =>
-        (item.title || "").toLowerCase().includes(q) ||
-        (item.city || "").toLowerCase().includes(q) ||
-        (item.platform || "").toLowerCase().includes(q)
-      );
-      renderList(filtered);
-    });
-
-    function editCasting(index) {
-      const item = cachedCastings[index];
-      if (!item) return;
-
-      document.getElementById("title").value = item.title || "";
-      document.getElementById("platform").value = item.platform || "Autre";
-      document.getElementById("city").value = item.city || "";
-      document.getElementById("description_public").value = item.description_public || "";
-      document.getElementById("description_private").value = item.description_private || "";
-
-      setStatus("Casting chargé dans le formulaire. Tu peux le modifier puis republier.", "ok");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    async function deleteCasting(index) {
-      const item = cachedCastings[index];
-      if (!item || !item.id) {
-        setStatus("Impossible de supprimer cet élément sans identifiant backend.", "err");
-        return;
-      }
-
-      try {
-        const res = await fetch(`/api/castings/${item.id}`, {
-          method: "DELETE"
-        });
-
-        if (!res.ok) throw new Error("Suppression impossible");
-        setStatus("Casting supprimé.", "ok");
-        await loadCastings();
-      } catch (e) {
-        setStatus("La suppression a échoué.", "err");
-      }
-    }
-
-    loadCastings();
-  </script>
+  loadCastings();
+</script>
 </body>
 </html>
