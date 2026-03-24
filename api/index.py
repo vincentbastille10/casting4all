@@ -98,3 +98,47 @@ def add_casting():
 @app.route("/api/uploads/<filename>")
 def uploaded_file(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
+
+
+from http.server import BaseHTTPRequestHandler
+import json
+import base64
+import requests
+import os
+
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
+REPO = "vincentbastille10/casting4all"
+FILE_PATH = "api/castings.json"
+
+class handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        if self.path == "/api/add-casting":
+            length = int(self.headers['Content-Length'])
+            body = self.rfile.read(length)
+            data = json.loads(body)
+
+            # 1. GET FILE
+            url = f"https://api.github.com/repos/{REPO}/contents/{FILE_PATH}"
+            headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+            res = requests.get(url, headers=headers)
+            file_data = res.json()
+
+            content = json.loads(base64.b64decode(file_data["content"]))
+
+            # 2. ADD
+            content.insert(0, data)
+
+            updated = base64.b64encode(
+                json.dumps(content, indent=2).encode()
+            ).decode()
+
+            # 3. PUSH
+            requests.put(url, headers=headers, json={
+                "message": "add casting",
+                "content": updated,
+                "sha": file_data["sha"]
+            })
+
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"OK")
